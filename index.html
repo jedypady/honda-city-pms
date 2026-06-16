@@ -1030,7 +1030,6 @@
       <button id="addCustomItem" type="button">Add item</button>
     </section>
 
-    <section class="next-panel card" id="nextPanel" aria-label="Next maintenance due" hidden></section>
 
     <section class="table-wrap card" aria-label="Maintenance records table">
       <table>
@@ -1513,7 +1512,6 @@
     function render() {
       rows.innerHTML = '';
       cards.innerHTML = '';
-      nextPanel.innerHTML = '';
       historyAll.innerHTML = '';
       calendarTimeline.innerHTML = '';
 
@@ -1561,7 +1559,6 @@
         cards.insertAdjacentHTML('beforeend', cardHtml(item, rec, calc));
       });
 
-      renderNextPanel(activeItems);
       renderAllHistory(activeItems);
       renderCalendar(activeItems);
 
