@@ -1268,7 +1268,7 @@
     currentKm.addEventListener('input', () => { saveFromInputs(false); render(); });
     document.addEventListener('input', event => {
       if (event.target.matches('[data-field="lastDate"], [data-field="lastKm"], [data-field="notes"]')) {
-        saveFromInputs(false);
+        saveFromInputs(false, false);
       }
     });
     document.addEventListener('change', event => {
@@ -1443,7 +1443,7 @@
       return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
-    function saveFromInputs(showFlash = true) {
+    function saveFromInputs(showFlash = true, shouldRender = true) {
       state.buyDate = buyDate.value;
       state.lockDate = lockDate.checked;
       state.currentDate = lockDate.checked ? currentDate.value : todayString();
@@ -1451,9 +1451,9 @@
       if (!lockDate.checked) currentDate.value = state.currentDate;
 
       items.forEach(item => {
-        const lastDate = document.querySelector(`[data-id="${item.id}"][data-field="lastDate"]`)?.value || '';
-        const lastKm = document.querySelector(`[data-id="${item.id}"][data-field="lastKm"]`)?.value || '';
-        const notes = document.querySelector(`[data-id="${item.id}"][data-field="notes"]`)?.value || '';
+        const lastDate = fieldValue(item.id, 'lastDate');
+        const lastKm = fieldValue(item.id, 'lastKm');
+        const notes = fieldValue(item.id, 'notes');
         const previous = state.records[item.id] || {};
         const changedServicePoint = (previous.lastDate || '') !== lastDate || (previous.lastKm || '') !== lastKm;
         if (!suppressHistory && changedServicePoint && (previous.lastDate || previous.lastKm || previous.notes)) {
@@ -1468,7 +1468,19 @@
         btn.textContent = 'Saved';
         setTimeout(() => btn.textContent = 'Save records', 900);
       }
-      render();
+      if (shouldRender) render();
+    }
+
+    function fieldValue(id, field) {
+      const fields = Array.from(document.querySelectorAll(`[data-id="${id}"][data-field="${field}"]`));
+      const active = fields.find(element => element === document.activeElement);
+      if (active) return active.value || '';
+
+      const visible = fields.find(element => {
+        const rect = element.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+      });
+      return (visible || fields[0])?.value || '';
     }
 
     function render() {
