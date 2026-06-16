@@ -973,7 +973,7 @@
       </section>
     </section>
 
-    <p class="footer">Baseline intervals are set for a Philippine-market Honda City S CVT. If date and km are both present, due means whichever comes first. Date-only items ignore km; km-only items ignore date. Due soon means within 30 days or 1,000 km.</p>
+    <p class="footer">Your entries auto-save permanently on this browser/device using localStorage, unless you clear browser/site data. Use Export backup before changing phones, browsers, or clearing data. Baseline intervals are set for a Philippine-market Honda City S CVT. If date and km are both present, due means whichever comes first.</p>
   </main>
 
   <section class="modal-backdrop" id="historyModal" aria-hidden="true">
@@ -1129,6 +1129,16 @@
       render();
     });
     currentKm.addEventListener('input', () => { saveFromInputs(false); render(); });
+    document.addEventListener('input', event => {
+      if (event.target.matches('[data-field="lastDate"], [data-field="lastKm"], [data-field="notes"]')) {
+        saveFromInputs(false);
+      }
+    });
+    document.addEventListener('change', event => {
+      if (event.target.matches('[data-field="lastDate"], [data-field="lastKm"], [data-field="notes"]')) {
+        saveFromInputs(false);
+      }
+    });
     rows.addEventListener('click', handleActionClick);
     cards.addEventListener('click', handleActionClick);
     document.querySelectorAll('.tab-button').forEach(button => button.addEventListener('click', switchTab));
