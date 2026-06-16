@@ -916,7 +916,7 @@
       <button class="secondary" id="sortUrgent">Sort urgent</button>
       <button class="secondary" id="importData">Import backup</button>
       <button class="secondary" id="printView">Print</button>
-      <button class="secondary" id="cloudStatus" type="button" disabled>Cloud: connecting</button>
+      <button class="secondary" id="cloudStatus" type="button">Cloud: connecting</button>
       <input class="hidden-file" id="backupFile" type="file" accept="application/json" />
     </section>
 
@@ -1138,6 +1138,10 @@
     document.getElementById('backupFile').addEventListener('change', importBackup);
     document.getElementById('printView').addEventListener('click', () => window.print());
     document.getElementById('addCustomItem').addEventListener('click', addCustomItem);
+    cloudStatus.addEventListener('click', () => {
+      saveFromInputs(false);
+      saveCloudNow();
+    });
     document.getElementById('sortUrgent').addEventListener('click', () => {
       urgentSort = !urgentSort;
       document.getElementById('sortUrgent').textContent = urgentSort ? 'Original order' : 'Sort urgent';
@@ -1232,7 +1236,7 @@
           const remoteJson = JSON.stringify(remoteState);
           const localJson = JSON.stringify(state);
           if (remoteJson !== localJson) applyCloudState(remoteState);
-          setCloudStatus('Cloud: synced');
+          setCloudStatus('Cloud: synced ' + timeNow());
         }, () => {
           setCloudStatus('Cloud: offline');
         });
@@ -1248,7 +1252,7 @@
       syncControlsFromState();
       render();
       applyingCloudState = false;
-      setCloudStatus('Cloud: synced');
+      setCloudStatus('Cloud: synced ' + timeNow());
     }
 
     function scheduleCloudSave() {
@@ -1265,7 +1269,7 @@
           state,
           updatedAt: new Date().toISOString()
         });
-        setCloudStatus('Cloud: synced');
+        setCloudStatus('Cloud: synced ' + timeNow());
       } catch {
         setCloudStatus('Cloud: offline');
       }
@@ -1280,6 +1284,10 @@
 
     function setCloudStatus(text) {
       cloudStatus.textContent = text;
+    }
+
+    function timeNow() {
+      return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
     function saveFromInputs(showFlash = true) {
