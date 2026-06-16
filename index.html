@@ -396,6 +396,76 @@
       padding: 11px 14px;
     }
 
+    .calendar-page {
+      padding: 20px;
+    }
+
+    .calendar-page-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+
+    .calendar-page-head h2 {
+      margin: 0;
+      font-size: clamp(34px, 5vw, 58px);
+      line-height: 0.95;
+      letter-spacing: -0.06em;
+      text-transform: uppercase;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+    }
+
+    .timeline-group {
+      display: grid;
+      gap: 8px;
+    }
+
+    .timeline-label {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: #121a23;
+      color: var(--blue);
+      font: 800 12px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .timeline-item {
+      display: grid;
+      grid-template-columns: 145px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(8, 13, 18, 0.72);
+    }
+
+    .timeline-date {
+      color: var(--ink);
+      font: 800 13px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .timeline-body strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .timeline-body span {
+      display: block;
+      color: var(--muted);
+      font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
     .next-card {
       border: 1px solid var(--line);
       border-radius: 20px;
@@ -676,6 +746,16 @@
       .history-dock { grid-template-columns: 1fr; }
       .history-summary-grid { grid-template-columns: 1fr; }
       .history-page-head { display: grid; }
+      .calendar-page { padding: 10px; }
+      .calendar-page-head { display: grid; gap: 8px; margin-bottom: 10px; }
+      .calendar-page-head h2 { font-size: 28px; }
+      .timeline { gap: 8px; }
+      .timeline-label { padding: 8px 10px; font-size: 10px; }
+      .timeline-item { grid-template-columns: 82px 1fr; gap: 8px; padding: 9px; border-radius: 14px; }
+      .timeline-item .status { justify-self: start; }
+      .timeline-date { font-size: 10px; }
+      .timeline-body strong { font-size: 13px; }
+      .timeline-body span { font-size: 10px; }
       .table-wrap { display: none; }
       .mobile-cards {
         display: grid;
@@ -867,6 +947,7 @@
   <main>
     <nav class="tabs" aria-label="App tabs">
       <button class="tab-button active" data-tab="dashboard" type="button">Dashboard</button>
+      <button class="tab-button" data-tab="calendar" type="button">Calendar</button>
       <button class="tab-button" data-tab="history" type="button">History</button>
     </nav>
 
@@ -972,6 +1053,19 @@
           <button class="secondary" id="printHistory" type="button">Print history</button>
         </div>
         <div class="history-all" id="historyAll"></div>
+      </section>
+    </section>
+
+    <section class="tab-panel" id="calendarPanel">
+      <section class="calendar-page card">
+        <div class="calendar-page-head">
+          <div>
+            <p class="eyebrow">Maintenance calendar</p>
+            <h2>Due timeline</h2>
+          </div>
+          <button class="secondary" id="printCalendar" type="button">Print calendar</button>
+        </div>
+        <div class="timeline" id="calendarTimeline"></div>
       </section>
     </section>
 
@@ -1104,6 +1198,7 @@
     const statusFilter = document.getElementById('statusFilter');
     const nextPanel = document.getElementById('nextPanel');
     const historyAll = document.getElementById('historyAll');
+    const calendarTimeline = document.getElementById('calendarTimeline');
     const historyModal = document.getElementById('historyModal');
     const historyTitle = document.getElementById('historyTitle');
     const historyList = document.getElementById('historyList');
@@ -1181,6 +1276,7 @@
     cards.addEventListener('click', handleActionClick);
     document.querySelectorAll('.tab-button').forEach(button => button.addEventListener('click', switchTab));
     document.getElementById('printHistory').addEventListener('click', () => window.print());
+    document.getElementById('printCalendar').addEventListener('click', () => window.print());
     document.getElementById('closeHistory').addEventListener('click', closeHistory);
     historyModal.addEventListener('click', event => {
       if (event.target === historyModal) closeHistory();
@@ -1333,6 +1429,7 @@
       cards.innerHTML = '';
       nextPanel.innerHTML = '';
       historyAll.innerHTML = '';
+      calendarTimeline.innerHTML = '';
 
       let due = 0;
       let soon = 0;
@@ -1378,6 +1475,7 @@
 
       renderNextPanel(calculated);
       renderAllHistory(calculated);
+      renderCalendar(calculated);
 
       document.getElementById('dueCount').textContent = due;
       document.getElementById('soonCount').textContent = soon;
@@ -1409,7 +1507,7 @@
       if (nextDate) parts.push(`<b>${formatDate(nextDate)}</b> <span>(${friendlyDays(daysLeft)})</span>`);
       if (nextKm !== null) parts.push(`<b>${nextKm.toLocaleString()} km</b> <span>(${friendlyKm(kmLeft)})</span>`);
 
-      return { status, label, dueText: parts.join('<br>') || 'Wear-based / inspect.', daysLeft, kmLeft };
+      return { status, label, dueText: parts.join('<br>') || 'Wear-based / inspect.', daysLeft, kmLeft, nextDate, nextKm };
     }
 
     function rowHtml(item, rec, calc) {
@@ -1522,16 +1620,82 @@
       });
     }
 
+    function renderCalendar(calculated) {
+      const entries = calculated
+        .map(({ item, calc }) => calendarEntry(item, calc))
+        .sort((a, b) => a.sort - b.sort);
+
+      if (!entries.length) {
+        calendarTimeline.innerHTML = '<div class="timeline-item"><div class="timeline-date">No items</div><div class="timeline-body"><strong>No scheduled maintenance</strong><span>Add records or custom items to build a timeline.</span></div></div>';
+        return;
+      }
+
+      let currentGroup = '';
+      entries.forEach(entry => {
+        if (entry.group !== currentGroup) {
+          calendarTimeline.insertAdjacentHTML('beforeend', `
+            <section class="timeline-group">
+              <div class="timeline-label">${escapeHtml(entry.group)}</div>
+            </section>`);
+          currentGroup = entry.group;
+        }
+
+        const group = calendarTimeline.lastElementChild;
+        group.insertAdjacentHTML('beforeend', `
+          <article class="timeline-item">
+            <div class="timeline-date">${entry.when}</div>
+            <div class="timeline-body">
+              <strong>${escapeHtml(entry.item.name)}</strong>
+              <span>${escapeHtml(entry.item.category)} · ${escapeHtml(intervalText(entry.item))}</span>
+              <span>${entry.detail}</span>
+            </div>
+            <span class="status ${entry.calc.status}">${entry.calc.label}</span>
+          </article>`);
+      });
+    }
+
+    function calendarEntry(item, calc) {
+      const dateDue = Number.isFinite(calc.daysLeft);
+      const kmDue = Number.isFinite(calc.kmLeft);
+      const dateSort = dateDue ? calc.daysLeft : Infinity;
+      const kmSort = kmDue ? calc.kmLeft / 100 : Infinity;
+      const sort = Math.min(dateSort, kmSort);
+      const dueDate = calc.nextDate || null;
+      let group = 'Upcoming';
+
+      if (calc.status === 'due') group = 'Overdue';
+      else if (calc.status === 'soon') group = 'Due soon';
+      else if (dateDue && dueDate) group = monthGroup(dueDate);
+      else if (kmDue) group = 'Km-based upcoming';
+      else group = 'No schedule';
+
+      const when = dueDate ? formatDate(dueDate) : (kmDue ? `${Math.max(0, Math.round(calc.kmLeft)).toLocaleString()} km left` : 'Inspect');
+      return {
+        item,
+        calc,
+        group,
+        sort: calc.status === 'due' ? sort : calc.status === 'soon' ? 100000 + sort : 200000 + sort,
+        when,
+        detail: calc.dueText
+      };
+    }
+
+    function monthGroup(date) {
+      return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
+    }
+
     function switchTab(event) {
       const tab = event.currentTarget.dataset.tab;
       document.querySelectorAll('.tab-button').forEach(button => button.classList.toggle('active', button.dataset.tab === tab));
       document.getElementById('dashboardPanel').classList.toggle('active', tab === 'dashboard');
+      document.getElementById('calendarPanel').classList.toggle('active', tab === 'calendar');
       document.getElementById('historyPanel').classList.toggle('active', tab === 'history');
     }
 
     function showHistoryItem(id) {
       document.querySelectorAll('.tab-button').forEach(button => button.classList.toggle('active', button.dataset.tab === 'history'));
       document.getElementById('dashboardPanel').classList.remove('active');
+      document.getElementById('calendarPanel').classList.remove('active');
       document.getElementById('historyPanel').classList.add('active');
       requestAnimationFrame(() => {
         document.getElementById(`history-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
