@@ -1453,7 +1453,7 @@
       });
 
       if (urgentSort) {
-        visible = visible.sort((a, b) => urgencyScore(a.calc) - urgencyScore(b.calc));
+        visible = visible.sort(compareUrgency);
       }
 
       calculated.forEach(({ rec, calc }) => {
@@ -1558,7 +1558,7 @@
 
     function renderNextPanel(calculated) {
       const next = [...calculated]
-        .sort((a, b) => urgencyScore(a.calc) - urgencyScore(b.calc))
+        .sort(compareUrgency)
         .slice(0, 3);
 
       next.forEach(({ item, calc }) => {
@@ -1709,6 +1709,29 @@
       const closestLimit = Math.min(dateScore, kmScore);
       if (!Number.isFinite(closestLimit)) return statusBase + 999999;
       return statusBase + closestLimit;
+    }
+
+    function compareUrgency(a, b) {
+      const aRank = urgencyRank(a.calc);
+      const bRank = urgencyRank(b.calc);
+      for (let index = 0; index < aRank.length; index++) {
+        if (aRank[index] !== bRank[index]) return aRank[index] - bRank[index];
+      }
+      return a.index - b.index;
+    }
+
+    function urgencyRank(calc) {
+      const statusRank = { due: 0, soon: 1, ok: 2, blank: 3 }[calc.status] ?? 4;
+      const dateScore = Number.isFinite(calc.daysLeft) ? calc.daysLeft : Infinity;
+      const kmScore = Number.isFinite(calc.kmLeft) ? calc.kmLeft / 100 : Infinity;
+      const closestLimit = Math.min(dateScore, kmScore);
+      const safeClosest = Number.isFinite(closestLimit) ? closestLimit : 999999;
+
+      if (calc.status === 'due') {
+        return [statusRank, safeClosest];
+      }
+
+      return [statusRank, safeClosest];
     }
 
     function handleActionClick(event) {
