@@ -858,6 +858,7 @@
         <input id="passwordInput" type="password" autocomplete="current-password" placeholder="Enter password" />
       </label>
       <p class="footer">Hint: name of MV</p>
+      <p class="footer">Cloud sync is enabled. Keep Firestore rules private after setup.</p>
       <button type="submit">Unlock</button>
       <p class="lock-error" id="lockError"></p>
     </form>
@@ -915,6 +916,7 @@
       <button class="secondary" id="sortUrgent">Sort urgent</button>
       <button class="secondary" id="importData">Import backup</button>
       <button class="secondary" id="printView">Print</button>
+      <button class="secondary" id="cloudStatus" type="button" disabled>Cloud: connecting</button>
       <input class="hidden-file" id="backupFile" type="file" accept="application/json" />
     </section>
 
@@ -973,7 +975,7 @@
       </section>
     </section>
 
-    <p class="footer">Your entries auto-save permanently on this browser/device using localStorage, unless you clear browser/site data. Use Export backup before changing phones, browsers, or clearing data. Baseline intervals are set for a Philippine-market Honda City S CVT. If date and km are both present, due means whichever comes first.</p>
+    <p class="footer">Your entries auto-save to Firebase cloud storage and sync across devices. localStorage is kept as an offline fallback. Use Export backup before major changes. If date and km are both present, due means whichever comes first.</p>
   </main>
 
   <section class="modal-backdrop" id="historyModal" aria-hidden="true">
@@ -989,10 +991,24 @@
     </div>
   </section>
 
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
     const STORAGE_KEY = 'honda-city-pms-v1';
     const PASSWORD = 'tokyo';
     const UNLOCK_KEY = 'honda-city-pms-unlocked';
+    const CLOUD_COLLECTION = 'pmsTrackers';
+    const CLOUD_DOC_ID = 'honda-city-s-2024';
+    const firebaseConfig = {
+      apiKey: "AIzaSyBAGZtDk8rUB2qETvdBYzMMNmmulos7J8Y",
+      authDomain: "poms-96aa5.firebaseapp.com",
+      projectId: "poms-96aa5",
+      storageBucket: "poms-96aa5.firebasestorage.app",
+      messagingSenderId: "999348796148",
+      appId: "1:999348796148:web:cf99e4bc6b03c690717ca1",
+      measurementId: "G-V0CT566VG0"
+    };
     const DEFAULT_BUY_DATE = '2024-02-14';
     const FIRST_PMS_DATE = '2026-04-25';
     const FIRST_PMS_KM = '15048';
@@ -1062,6 +1078,10 @@
     ];
     let items = [];
 
+    const firebaseApp = initializeApp(firebaseConfig);
+    const firestore = getFirestore(firebaseApp);
+    const cloudDoc = doc(firestore, CLOUD_COLLECTION, CLOUD_DOC_ID);
+
     let state = loadState();
 
     const buyDate = document.getElementById('buyDate');
@@ -1081,8 +1101,11 @@
     const lockForm = document.getElementById('lockForm');
     const passwordInput = document.getElementById('passwordInput');
     const lockError = document.getElementById('lockError');
+    const cloudStatus = document.getElementById('cloudStatus');
     let urgentSort = false;
     let suppressHistory = false;
+    let applyingCloudState = false;
+    let cloudSaveTimer = null;
 
     if (sessionStorage.getItem(UNLOCK_KEY) === 'yes') {
       unlockApp();
@@ -1107,6 +1130,7 @@
     currentKm.value = state.currentKm || FIRST_PMS_KM;
 
     render();
+    startCloudSync();
 
     document.getElementById('saveAll').addEventListener('click', saveFromInputs);
     document.getElementById('exportData').addEventListener('click', exportBackup);
@@ -1188,6 +1212,74 @@
 
     function persist() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      scheduleCloudSave();
+    }
+
+    async function startCloudSync() {
+      setCloudStatus('Cloud: connecting');
+      try {
+        const snapshot = await getDoc(cloudDoc);
+        if (snapshot.exists() && snapshot.data().state) {
+          applyCloudState(snapshot.data().state);
+        } else {
+          await saveCloudNow();
+        }
+
+        onSnapshot(cloudDoc, remoteSnapshot => {
+          if (!remoteSnapshot.exists()) return;
+          const remoteState = remoteSnapshot.data().state;
+          if (!remoteState || applyingCloudState) return;
+          const remoteJson = JSON.stringify(remoteState);
+          const localJson = JSON.stringify(state);
+          if (remoteJson !== localJson) applyCloudState(remoteState);
+          setCloudStatus('Cloud: synced');
+        }, () => {
+          setCloudStatus('Cloud: offline');
+        });
+      } catch {
+        setCloudStatus('Cloud: offline');
+      }
+    }
+
+    function applyCloudState(remoteState) {
+      applyingCloudState = true;
+      state = withDefaults(remoteState);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      syncControlsFromState();
+      render();
+      applyingCloudState = false;
+      setCloudStatus('Cloud: synced');
+    }
+
+    function scheduleCloudSave() {
+      if (applyingCloudState) return;
+      clearTimeout(cloudSaveTimer);
+      setCloudStatus('Cloud: saving');
+      cloudSaveTimer = setTimeout(saveCloudNow, 700);
+    }
+
+    async function saveCloudNow() {
+      if (applyingCloudState) return;
+      try {
+        await setDoc(cloudDoc, {
+          state,
+          updatedAt: new Date().toISOString()
+        });
+        setCloudStatus('Cloud: synced');
+      } catch {
+        setCloudStatus('Cloud: offline');
+      }
+    }
+
+    function syncControlsFromState() {
+      buyDate.value = state.buyDate || DEFAULT_BUY_DATE;
+      lockDate.checked = Boolean(state.lockDate);
+      currentDate.value = state.lockDate && state.currentDate ? state.currentDate : todayString();
+      currentKm.value = state.currentKm || '';
+    }
+
+    function setCloudStatus(text) {
+      cloudStatus.textContent = text;
     }
 
     function saveFromInputs(showFlash = true) {
@@ -1774,10 +1866,7 @@
           const imported = JSON.parse(reader.result);
           state = withDefaults(imported);
           persist();
-          buyDate.value = state.buyDate || DEFAULT_BUY_DATE;
-          lockDate.checked = Boolean(state.lockDate);
-          currentDate.value = state.lockDate && state.currentDate ? state.currentDate : todayString();
-          currentKm.value = state.currentKm || '';
+          syncControlsFromState();
           render();
         } catch {
           alert('Import failed. Please choose a valid PMS backup JSON file.');
