@@ -62,20 +62,24 @@
     }
 
     .tabs {
-      display: inline-grid;
-      grid-template-columns: 1fr 1fr;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 6px;
       padding: 6px;
       margin-bottom: 18px;
       border-radius: 18px;
       background: rgba(8, 13, 18, 0.72);
       border: 1px solid var(--line);
+      width: min(520px, 100%);
     }
 
     .tab-button {
       background: transparent;
       color: var(--muted);
       border-color: transparent;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .tab-button.active {
@@ -712,8 +716,8 @@
 
     @media (max-width: 820px) {
       main { width: min(100% - 10px, 680px); padding: 8px 0 24px; }
-      .tabs { width: 100%; margin-bottom: 8px; border-radius: 14px; }
-      .tab-button { padding: 10px 8px; font-size: 12px; }
+      .tabs { width: 100%; margin-bottom: 8px; border-radius: 14px; gap: 4px; padding: 4px; }
+      .tab-button { padding: 9px 4px; font-size: 11px; letter-spacing: 0.02em; }
       .hero { grid-template-columns: 1fr; }
       .card { border-radius: 16px; }
       .intro { min-height: 0; padding: 14px; }
