@@ -1301,12 +1301,15 @@
     }
 
     function withDefaults(saved) {
-      const customItems = Array.isArray(saved.customItems) ? saved.customItems : [];
+      const deletedCustomItemIds = Array.isArray(saved.deletedCustomItemIds) ? saved.deletedCustomItemIds : [];
+      const deletedSet = new Set(deletedCustomItemIds);
+      const customItems = Array.isArray(saved.customItems) ? saved.customItems.filter(item => !deletedSet.has(item.id)) : [];
       items = [...builtInItems, ...customItems];
       const records = mergeRecords(saved.records || {});
       return {
         ...saved,
         customItems,
+        deletedCustomItemIds,
         buyDate: saved.buyDate || DEFAULT_BUY_DATE,
         currentDate: saved.lockDate && saved.currentDate ? saved.currentDate : todayString(),
         lockDate: Boolean(saved.lockDate),
@@ -1357,12 +1360,52 @@
 
     function applyCloudState(remoteState) {
       applyingCloudState = true;
-      state = withDefaults(remoteState);
+      const mergedState = mergeCloudStates(state, remoteState);
+      state = withDefaults(mergedState);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       syncControlsFromState();
       render();
       applyingCloudState = false;
+      if (JSON.stringify(mergedState) !== JSON.stringify(remoteState)) {
+        saveCloudNow();
+      }
       setCloudStatus('Cloud: synced ' + timeNow());
+    }
+
+    function mergeCloudStates(localState, remoteState) {
+      const local = localState || {};
+      const remote = remoteState || {};
+      const deletedCustomItemIds = Array.from(new Set([
+        ...(local.deletedCustomItemIds || []),
+        ...(remote.deletedCustomItemIds || [])
+      ]));
+      const deletedSet = new Set(deletedCustomItemIds);
+      const customMap = new Map();
+
+      [...(local.customItems || []), ...(remote.customItems || [])].forEach(item => {
+        if (item?.id && !deletedSet.has(item.id)) customMap.set(item.id, item);
+      });
+
+      return {
+        ...local,
+        ...remote,
+        customItems: Array.from(customMap.values()),
+        deletedCustomItemIds,
+        records: {
+          ...(local.records || {}),
+          ...(remote.records || {})
+        },
+        history: mergeHistory(local.history || [], remote.history || [])
+      };
+    }
+
+    function mergeHistory(localHistory, remoteHistory) {
+      const map = new Map();
+      [...localHistory, ...remoteHistory].forEach(entry => {
+        const key = [entry.id, entry.lastDate, entry.lastKm, entry.notes, entry.savedAt].join('|');
+        map.set(key, entry);
+      });
+      return Array.from(map.values());
     }
 
     function scheduleCloudSave() {
@@ -1795,6 +1838,7 @@
       items = [...builtInItems, ...state.customItems];
       state.records[id] = { lastDate: '', lastKm: '', notes: '' };
       persist();
+      saveCloudNow();
 
       document.getElementById('customName').value = '';
       document.getElementById('customCategory').value = '';
@@ -1809,10 +1853,12 @@
       if (!item?.custom) return;
       if (!confirm(`Delete custom item "${item.name}"? Its record and history will also be removed.`)) return;
       state.customItems = (state.customItems || []).filter(entry => entry.id !== id);
+      state.deletedCustomItemIds = Array.from(new Set([...(state.deletedCustomItemIds || []), id]));
       delete state.records[id];
       state.history = (state.history || []).filter(entry => entry.id !== id);
       items = [...builtInItems, ...state.customItems];
       persist();
+      saveCloudNow();
       render();
     }
 
