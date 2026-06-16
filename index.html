@@ -2057,6 +2057,12 @@
     }
 
     function addMonths(date, months) {
+      if (!Number.isInteger(months)) {
+        const copy = new Date(date.getTime());
+        copy.setDate(copy.getDate() + Math.round(months * 30.4375));
+        return copy;
+      }
+
       const copy = new Date(date.getTime());
       const day = copy.getDate();
       copy.setMonth(copy.getMonth() + months);
