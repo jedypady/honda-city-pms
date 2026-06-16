@@ -1540,9 +1540,11 @@
 
     function urgencyScore(calc) {
       const statusBase = { due: 0, soon: 1000000, ok: 2000000, blank: 3000000 }[calc.status] || 4000000;
-      const dayScore = Number.isFinite(calc.daysLeft) ? calc.daysLeft : 999999;
-      const kmScore = Number.isFinite(calc.kmLeft) ? calc.kmLeft / 100 : 999999;
-      return statusBase + Math.min(dayScore, kmScore);
+      const dateScore = Number.isFinite(calc.daysLeft) ? calc.daysLeft : Infinity;
+      const kmScore = Number.isFinite(calc.kmLeft) ? calc.kmLeft / 100 : Infinity;
+      const closestLimit = Math.min(dateScore, kmScore);
+      if (!Number.isFinite(closestLimit)) return statusBase + 999999;
+      return statusBase + closestLimit;
     }
 
     function handleActionClick(event) {
