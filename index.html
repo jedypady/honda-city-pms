@@ -998,6 +998,12 @@
           <option value="blank">No record</option>
         </select>
       </label>
+      <label>Detail
+        <select id="detailMode">
+          <option value="simple">Simple view</option>
+          <option value="all">Full Honda checklist</option>
+        </select>
+      </label>
       <button class="secondary" id="sortUrgent">Sort urgent</button>
       <button class="secondary" id="importData">Import backup</button>
       <button class="secondary" id="printView">Print</button>
@@ -1182,6 +1188,28 @@
       { category: 'Dealer checklist', id: 'audio-navi-update', name: 'Audio / Navi map / software update', detail: 'Recall, product update, software updates', months: 12, km: 20000 }
     ];
     let items = [];
+    const nonCoreItemIds = new Set([
+      'quality-inspection',
+      'ac-lubricant',
+      'brake-cleaning',
+      'front-rear-brakes',
+      'parking-brake',
+      'lights',
+      'horn-operation',
+      'idle-speed',
+      'fluid-levels',
+      'cooling-hoses',
+      'hoses-lines',
+      'steering-suspension',
+      'driveshaft-boots',
+      'exhaust',
+      'tire-tread-depth',
+      'tire-pressure-spare',
+      'alignment',
+      'wipers',
+      'reset-oil-reminder',
+      'audio-navi-update'
+    ]);
 
     const firebaseApp = initializeApp(firebaseConfig);
     const firestore = getFirestore(firebaseApp);
@@ -1197,6 +1225,7 @@
     const cards = document.getElementById('cards');
     const searchBox = document.getElementById('searchBox');
     const statusFilter = document.getElementById('statusFilter');
+    const detailMode = document.getElementById('detailMode');
     const nextPanel = document.getElementById('nextPanel');
     const historyAll = document.getElementById('historyAll');
     const calendarTimeline = document.getElementById('calendarTimeline');
@@ -1255,6 +1284,7 @@
     });
     searchBox.addEventListener('input', render);
     statusFilter.addEventListener('change', render);
+    detailMode.addEventListener('change', render);
     buyDate.addEventListener('change', () => { saveFromInputs(false); render(); });
     currentDate.addEventListener('change', () => { saveFromInputs(false); render(); });
     lockDate.addEventListener('change', () => {
@@ -1492,13 +1522,15 @@
       let saved = 0;
       const query = searchBox.value.trim().toLowerCase();
       const filter = statusFilter.value;
+      const simpleMode = detailMode.value === 'simple';
       const calculated = items.map((item, index) => {
         const rec = state.records[item.id] || {};
         const calc = calculate(item, rec);
         return { item, rec, calc, index };
       });
+      const activeItems = calculated.filter(entry => !simpleMode || entry.item.custom || !nonCoreItemIds.has(entry.item.id));
 
-      let visible = calculated.filter(entry => {
+      let visible = activeItems.filter(entry => {
         const text = `${entry.item.name} ${entry.item.detail}`.toLowerCase();
         const matchesSearch = !query || text.includes(query);
         const matchesFilter =
@@ -1512,7 +1544,7 @@
         visible = visible.sort(compareUrgency);
       }
 
-      calculated.forEach(({ rec, calc }) => {
+      activeItems.forEach(({ rec, calc }) => {
         if (rec.lastDate || rec.lastKm || rec.notes) saved++;
         if (calc.status === 'due') due++;
         if (calc.status === 'soon') soon++;
@@ -1529,9 +1561,9 @@
         cards.insertAdjacentHTML('beforeend', cardHtml(item, rec, calc));
       });
 
-      renderNextPanel(calculated);
-      renderAllHistory(calculated);
-      renderCalendar(calculated);
+      renderNextPanel(activeItems);
+      renderAllHistory(activeItems);
+      renderCalendar(activeItems);
 
       document.getElementById('dueCount').textContent = due;
       document.getElementById('soonCount').textContent = soon;
