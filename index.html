@@ -990,7 +990,7 @@
       <div>
         <p class="eyebrow" style="margin: 0 0 4px; color: var(--blue);">Upgrades & Accessories Tracker</p>
         <div style="font-size: 18px; font-weight: 700; color: var(--ink);">Car Upgrades & Wishlist</div>
-        <p style="margin: 4px 0 0; font-size: 13px; color: var(--muted);"><span id="checklistDashboardCount" style="color: var(--ok); font-weight: 700;">0 of 6 completed</span> • Insurance, Leather Seats, Mags Paint, Folding Mirrors, Deep Dish, Dashcam</p>
+        <p style="margin: 4px 0 0; font-size: 13px; color: var(--muted);"><span id="checklistDashboardCount" style="color: var(--ok); font-weight: 700;">0 of 8 completed</span> • Insurance, Leather Seats, Mags Paint, Mirrors, Deep Dish, Dashcam, Door Dent, Fog Light</p>
       </div>
       <button class="secondary" id="goToChecklistBtn" type="button" style="padding: 10px 18px; font-size: 12px; font-weight: 600; cursor: pointer;">View Checklist →</button>
     </section>
@@ -1423,6 +1423,7 @@
       const list = state.carChecklist || defaultCarChecklist;
       const item = list.find(it => it.id === id);
       if (item && confirm(`Delete "${item.name}" from your checklist?`)) {
+        state.deletedChecklistIds = Array.from(new Set([...(state.deletedChecklistIds || []), id]));
         state.carChecklist = list.filter(it => it.id !== id);
         persist();
         renderChecklist();
@@ -1489,11 +1490,28 @@
       const customItems = Array.isArray(saved.customItems) ? saved.customItems.filter(item => !deletedSet.has(item.id)) : [];
       items = [...builtInItems, ...customItems];
       const records = mergeRecords(saved.records || {});
-      const carChecklist = Array.isArray(saved.carChecklist) && saved.carChecklist.length > 0 ? saved.carChecklist : defaultCarChecklist.map(it => ({...it}));
+      const deletedChecklistIds = Array.isArray(saved.deletedChecklistIds) ? saved.deletedChecklistIds : [];
+      const deletedChecklistSet = new Set(deletedChecklistIds);
+      let carChecklist = [];
+      if (Array.isArray(saved.carChecklist) && saved.carChecklist.length > 0) {
+        const savedMap = new Map();
+        saved.carChecklist.forEach(item => {
+          if (item?.id && !deletedChecklistSet.has(item.id)) savedMap.set(item.id, item);
+        });
+        defaultCarChecklist.forEach(defItem => {
+          if (!savedMap.has(defItem.id) && !deletedChecklistSet.has(defItem.id)) {
+            savedMap.set(defItem.id, { ...defItem });
+          }
+        });
+        carChecklist = Array.from(savedMap.values());
+      } else {
+        carChecklist = defaultCarChecklist.filter(it => !deletedChecklistSet.has(it.id)).map(it => ({...it}));
+      }
       return {
         ...saved,
         customItems,
         deletedCustomItemIds,
+        deletedChecklistIds,
         carChecklist,
         buyDate: saved.buyDate || DEFAULT_BUY_DATE,
         currentDate: saved.lockDate && saved.currentDate ? saved.currentDate : todayString(),
@@ -1730,6 +1748,26 @@
         priority: 'High Priority',
         notes: 'Sony/Starlight sensor. Rear camera mounted flush against top rear glass for glare-free clear night video.',
         done: false
+      },
+      {
+        id: 'door-dent',
+        num: 7,
+        name: 'Fix Door Dent (Paintless Dent Repair / PDR)',
+        category: 'Body Repair',
+        cost: '₱800 – ₱2,500',
+        priority: 'Medium',
+        notes: 'Opt for Paintless Dent Repair (PDR) if clear coat is intact to preserve original factory Honda paint without repainting the panel.',
+        done: false
+      },
+      {
+        id: 'fog-light',
+        num: 8,
+        name: 'Fix Cracked Fog Light Assembly',
+        category: 'Lighting / Exterior',
+        cost: '₱1,500 – ₱3,500',
+        priority: 'High Priority',
+        notes: 'Replace cracked fog lamp housing/lens to prevent water intrusion, electrical shorts, and internal condensation during heavy rain.',
+        done: false
       }
     ];
 
@@ -1834,6 +1872,7 @@
           const id = e.currentTarget.dataset.delCheckId;
           const found = (state.carChecklist || defaultCarChecklist).find(it => it.id === id);
           if (found && confirm(`Delete "${found.name}" from your checklist?`)) {
+            state.deletedChecklistIds = Array.from(new Set([...(state.deletedChecklistIds || []), id]));
             state.carChecklist = (state.carChecklist || defaultCarChecklist).filter(it => it.id !== id);
             persist();
             renderChecklist();
