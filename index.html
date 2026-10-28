@@ -951,6 +951,7 @@
   <main>
     <nav class="tabs" aria-label="App tabs">
       <button class="tab-button active" data-tab="dashboard" type="button">Dashboard</button>
+      <button class="tab-button" data-tab="checklist" type="button">Car Checklist</button>
       <button class="tab-button" data-tab="calendar" type="button">Calendar</button>
       <button class="tab-button" data-tab="history" type="button">History</button>
     </nav>
@@ -982,6 +983,16 @@
       </label>
       <button id="saveAll">Save records</button>
       <button class="secondary" id="exportData">Export backup</button>
+    </section>
+
+    
+    <section class="card checklist-banner" id="checklistBannerCard" style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px 22px; margin-bottom: 16px; border: 1px solid var(--line); border-left: 4px solid var(--blue); flex-wrap: wrap;">
+      <div>
+        <p class="eyebrow" style="margin: 0 0 4px; color: var(--blue);">Upgrades & Accessories Tracker</p>
+        <div style="font-size: 18px; font-weight: 700; color: var(--ink);">Car Upgrades & Wishlist</div>
+        <p style="margin: 4px 0 0; font-size: 13px; color: var(--muted);"><span id="checklistDashboardCount" style="color: var(--ok); font-weight: 700;">0 of 6 completed</span> • Insurance, Leather Seats, Mags Paint, Folding Mirrors, Deep Dish, Dashcam</p>
+      </div>
+      <button class="secondary" id="goToChecklistBtn" type="button" style="padding: 10px 18px; font-size: 12px; font-weight: 600; cursor: pointer;">View Checklist →</button>
     </section>
 
     <section class="tools card">
@@ -1045,6 +1056,48 @@
 
     <section class="mobile-cards" id="cards" aria-label="Maintenance records cards"></section>
     </section>
+
+    
+    <section class="tab-panel" id="checklistPanel">
+      <section class="card" style="padding: 26px;">
+        <div class="calendar-page-head" style="margin-bottom: 20px;">
+          <div>
+            <p class="eyebrow" style="color: var(--blue);">Honda City S 2024 Upgrades & Gear</p>
+            <h2 style="font-size: 30px; margin: 0 0 6px;">Car Upgrade Checklist</h2>
+            <p style="color: var(--muted); margin: 0; font-size: 13px;">Track your planned car modifications, gear, and protection priorities. Check off items as you complete them—auto-synced to cloud.</p>
+          </div>
+          <div style="display: flex; gap: 12px; align-items: center; justify-self: end;">
+            <div style="text-align: right; background: var(--panel-2); padding: 8px 16px; border-radius: 14px; border: 1px solid var(--line);">
+              <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);">Progress</div>
+              <div id="checklistProgressBadge" style="font-size: 18px; font-weight: 800; color: var(--ok);">0 / 6 Done</div>
+            </div>
+            <button class="secondary" id="resetChecklistBtn" type="button" style="padding: 9px 13px; font-size: 11px;">Reset</button>
+          </div>
+        </div>
+
+        <div id="checklistItemsList" style="display: grid; gap: 10px;"></div>
+
+        <div style="margin-top: 24px; padding: 18px; background: rgba(16, 21, 27, 0.7); border: 1px dashed var(--line); border-radius: 16px;">
+          <h4 style="margin: 0 0 10px; font-size: 14px; color: var(--ink);">+ Add New Upgrade or Accessory</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) 100px; gap: 8px; align-items: flex-end;">
+            <label style="font-size: 10px;">Item Name
+              <input id="newCheckName" placeholder="e.g. Bosch EC6 Horn" style="margin-top: 3px;" />
+            </label>
+            <label style="font-size: 10px;">Category
+              <input id="newCheckCategory" placeholder="e.g. Electrical / Horn" style="margin-top: 3px;" />
+            </label>
+            <label style="font-size: 10px;">Est. Cost
+              <input id="newCheckCost" placeholder="e.g. ₱1,000" style="margin-top: 3px;" />
+            </label>
+            <label style="font-size: 10px;">Notes
+              <input id="newCheckNotes" placeholder="e.g. Plug-and-play snail horn" style="margin-top: 3px;" />
+            </label>
+            <button id="addCheckItemBtn" type="button" style="padding: 9px 12px; font-size: 12px;">Add Item</button>
+          </div>
+        </div>
+      </section>
+    </section>
+
 
     <section class="tab-panel" id="historyPanel">
       <section class="history-page card">
@@ -1283,6 +1336,46 @@
     rows.addEventListener('click', handleActionClick);
     cards.addEventListener('click', handleActionClick);
     document.querySelectorAll('.tab-button').forEach(button => button.addEventListener('click', switchTab));
+    document.getElementById('goToChecklistBtn')?.addEventListener('click', () => {
+      document.querySelectorAll('.tab-button').forEach(b => b.classList.toggle('active', b.dataset.tab === 'checklist'));
+      document.getElementById('dashboardPanel').classList.remove('active');
+      document.getElementById('calendarPanel').classList.remove('active');
+      document.getElementById('historyPanel').classList.remove('active');
+      document.getElementById('checklistPanel')?.classList.add('active');
+      renderChecklist();
+    });
+    document.getElementById('resetChecklistBtn')?.addEventListener('click', () => {
+      if (confirm('Reset checklist items to default?')) {
+        state.carChecklist = defaultCarChecklist.map(it => ({...it}));
+        persist();
+        renderChecklist();
+      }
+    });
+    document.getElementById('addCheckItemBtn')?.addEventListener('click', () => {
+      const name = document.getElementById('newCheckName').value.trim();
+      if (!name) return;
+      const category = document.getElementById('newCheckCategory').value.trim() || 'Upgrade';
+      const cost = document.getElementById('newCheckCost').value.trim() || 'TBD';
+      const notes = document.getElementById('newCheckNotes').value.trim() || '';
+      const newItem = {
+        id: 'custom-' + Date.now(),
+        num: (state.carChecklist || defaultCarChecklist).length + 1,
+        name,
+        category,
+        cost,
+        priority: 'Custom',
+        notes,
+        done: false,
+        isCustom: true
+      };
+      state.carChecklist = [...(state.carChecklist || defaultCarChecklist), newItem];
+      document.getElementById('newCheckName').value = '';
+      document.getElementById('newCheckCategory').value = '';
+      document.getElementById('newCheckCost').value = '';
+      document.getElementById('newCheckNotes').value = '';
+      persist();
+      renderChecklist();
+    });
     document.getElementById('printHistory').addEventListener('click', () => window.print());
     document.getElementById('printCalendar').addEventListener('click', () => window.print());
     document.getElementById('closeHistory').addEventListener('click', closeHistory);
@@ -1310,10 +1403,12 @@
       const customItems = Array.isArray(saved.customItems) ? saved.customItems.filter(item => !deletedSet.has(item.id)) : [];
       items = [...builtInItems, ...customItems];
       const records = mergeRecords(saved.records || {});
+      const carChecklist = Array.isArray(saved.carChecklist) && saved.carChecklist.length > 0 ? saved.carChecklist : defaultCarChecklist.map(it => ({...it}));
       return {
         ...saved,
         customItems,
         deletedCustomItemIds,
+        carChecklist,
         buyDate: saved.buyDate || DEFAULT_BUY_DATE,
         currentDate: saved.lockDate && saved.currentDate ? saved.currentDate : todayString(),
         lockDate: Boolean(saved.lockDate),
@@ -1393,6 +1488,7 @@
       return {
         ...local,
         ...remote,
+        carChecklist: remote.carChecklist || local.carChecklist || defaultCarChecklist.map(it => ({...it})),
         customItems: Array.from(customMap.values()),
         deletedCustomItemIds,
         records: {
@@ -1487,6 +1583,143 @@
       return (visible || fields[0])?.value || '';
     }
 
+    
+    const defaultCarChecklist = [
+      {
+        id: 'insurance',
+        num: 1,
+        name: 'Comprehensive Car Insurance',
+        category: 'Asset Protection',
+        cost: '₱14,700 – ₱15,900',
+        priority: 'High (Nov/Dec)',
+        notes: 'Own Damage, Theft, and Acts of Nature (AON). Budget via 13th-month bonus (Cocogen / Stronghold).',
+        done: false
+      },
+      {
+        id: 'leather-seat-cover',
+        num: 2,
+        name: 'Leather Seat Covers',
+        category: 'Interior Luxury',
+        cost: '₱6,500',
+        priority: 'High Priority',
+        notes: 'Custom fit GN2 black leatherette. Must have certified side-airbag breakaway seam & perforated centers.',
+        done: false
+      },
+      {
+        id: 'mags-paint',
+        num: 3,
+        name: 'Mags Paint (Stock Alloys Repaint)',
+        category: 'Exterior Style',
+        cost: '₱3,500 – ₱5,000',
+        priority: 'Medium',
+        notes: 'Gloss black or gunmetal finish on OEM 15" wheels for sporty RS stance. Saves ~₱45k over buying new wheels.',
+        done: false
+      },
+      {
+        id: 'auto-folding-mirror',
+        num: 4,
+        name: 'Auto-Folding Side Mirrors',
+        category: 'Convenience',
+        cost: '₱8,500 – ₱11,000',
+        priority: 'Optional / Low',
+        notes: 'Key-fob lock auto-retract module and motorized mirror mechanisms (retrofit).',
+        done: false
+      },
+      {
+        id: 'deep-dish',
+        num: 5,
+        name: 'Deep Dish Floor Matting & Trunk Tray',
+        category: 'Interior Protection',
+        cost: '₱2,500 – ₱3,500',
+        priority: 'Medium',
+        notes: 'TPE molded high-wall waterproof mats to prevent dirt, mud, and water spills from reaching OEM carpet.',
+        done: false
+      },
+      {
+        id: 'dash-cam',
+        num: 6,
+        name: 'Dash Cam (Front & Rear)',
+        category: 'Security & Evidence',
+        cost: '₱3,500 – ₱6,000',
+        priority: 'High Priority',
+        notes: 'Sony/Starlight sensor. Rear camera mounted flush against top rear glass for glare-free clear night video.',
+        done: false
+      }
+    ];
+
+    function renderChecklist() {
+      const container = document.getElementById('checklistItemsList');
+      if (!container) return;
+      const list = state.carChecklist || defaultCarChecklist;
+      const completedCount = list.filter(item => item.done).length;
+      const totalCount = list.length;
+
+      const progressBadge = document.getElementById('checklistProgressBadge');
+      if (progressBadge) {
+        progressBadge.textContent = `${completedCount} / ${totalCount} Done`;
+        progressBadge.style.color = completedCount === totalCount ? 'var(--ok)' : (completedCount > 0 ? 'var(--soon)' : 'var(--muted)');
+      }
+
+      const dashCount = document.getElementById('checklistDashboardCount');
+      if (dashCount) {
+        dashCount.textContent = `${completedCount} of ${totalCount} completed`;
+        dashCount.style.color = completedCount === totalCount ? 'var(--ok)' : (completedCount > 0 ? 'var(--soon)' : 'var(--muted)');
+      }
+
+      container.innerHTML = list.map((item, index) => {
+        const isDone = Boolean(item.done);
+        return `
+          <div class="card" style="padding: 14px 18px; border-radius: 16px; border: 1px solid ${isDone ? 'rgba(29, 187, 122, 0.4)' : 'var(--line)'}; background: ${isDone ? 'rgba(29, 187, 122, 0.04)' : 'var(--panel)'}; display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; transition: all 0.2s ease;">
+            <div style="display: flex; align-items: flex-start; gap: 12px; flex: 1; min-width: 240px;">
+              <input type="checkbox" data-check-id="${item.id}" ${isDone ? 'checked' : ''} style="width: 20px; height: 20px; margin-top: 3px; cursor: pointer; accent-color: var(--ok);" />
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span style="font-weight: 800; font-size: 12px; color: var(--blue);">#${index + 1}</span>
+                  <strong style="font-size: 15px; color: ${isDone ? 'var(--muted)' : 'var(--ink)'}; ${isDone ? 'text-decoration: line-through;' : ''}">${escapeHtml(item.name)}</strong>
+                  <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: rgba(95, 183, 255, 0.12); color: var(--blue);">${escapeHtml(item.category || 'Upgrade')}</span>
+                  ${item.priority ? `<span style="font-size: 10px; padding: 3px 8px; border-radius: 999px; background: rgba(240, 162, 58, 0.12); color: var(--soon); font-weight: 600;">${escapeHtml(item.priority)}</span>` : ''}
+                </div>
+                <p style="margin: 6px 0 0; font-size: 12px; color: var(--muted); line-height: 1.4;">${escapeHtml(item.notes || '')}</p>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="font-weight: 700; font-size: 13px; color: var(--ink); background: var(--panel-2); padding: 6px 12px; border-radius: 10px; border: 1px solid var(--line); white-space: nowrap;">
+                ${escapeHtml(item.cost || 'TBD')}
+              </div>
+              <span class="status" style="background: ${isDone ? 'var(--ok)' : 'rgba(255, 255, 255, 0.08)'}; color: ${isDone ? '#061015' : 'var(--muted)'};">
+                ${isDone ? 'COMPLETED' : 'PENDING'}
+              </span>
+              ${item.isCustom ? `<button type="button" class="secondary" data-del-check-id="${item.id}" style="padding: 5px 8px; font-size: 11px; color: var(--due);">✕</button>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Add checkbox event listeners
+      container.querySelectorAll('input[type="checkbox"]').forEach(box => {
+        box.addEventListener('change', (e) => {
+          const id = e.target.dataset.checkId;
+          const found = (state.carChecklist || defaultCarChecklist).find(it => it.id === id);
+          if (found) {
+            found.done = e.target.checked;
+            persist();
+            renderChecklist();
+          }
+        });
+      });
+
+      // Add delete custom item listeners
+      container.querySelectorAll('button[data-del-check-id]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = e.currentTarget.dataset.delCheckId;
+          state.carChecklist = (state.carChecklist || defaultCarChecklist).filter(it => it.id !== id);
+          persist();
+          renderChecklist();
+        });
+      });
+    }
+
+
     function render() {
       rows.innerHTML = '';
       cards.innerHTML = '';
@@ -1541,6 +1774,7 @@
       document.getElementById('dueCount').textContent = due;
       document.getElementById('soonCount').textContent = soon;
       document.getElementById('savedCount').textContent = saved;
+      renderChecklist();
     }
 
     function calculate(item, rec) {
@@ -1749,8 +1983,10 @@
       const tab = event.currentTarget.dataset.tab;
       document.querySelectorAll('.tab-button').forEach(button => button.classList.toggle('active', button.dataset.tab === tab));
       document.getElementById('dashboardPanel').classList.toggle('active', tab === 'dashboard');
+      document.getElementById('checklistPanel')?.classList.toggle('active', tab === 'checklist');
       document.getElementById('calendarPanel').classList.toggle('active', tab === 'calendar');
       document.getElementById('historyPanel').classList.toggle('active', tab === 'history');
+      if (tab === 'checklist') renderChecklist();
     }
 
     function showHistoryItem(id) {
