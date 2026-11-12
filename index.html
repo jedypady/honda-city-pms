@@ -1290,6 +1290,89 @@
     ];
     let items = [];
 
+    const defaultCarChecklist = [
+      {
+        id: 'insurance',
+        num: 1,
+        name: 'Comprehensive Car Insurance',
+        category: 'Asset Protection',
+        cost: '₱14,700 – ₱15,900',
+        priority: 'High (Nov/Dec)',
+        notes: 'Own Damage, Theft, and Acts of Nature (AON). Budget via 13th-month bonus (Cocogen / Stronghold).',
+        done: false
+      },
+      {
+        id: 'leather-seat-cover',
+        num: 2,
+        name: 'Leather Seat Covers',
+        category: 'Interior Luxury',
+        cost: '₱6,500',
+        priority: 'High Priority',
+        notes: 'Custom fit GN2 black leatherette. Must have certified side-airbag breakaway seam & perforated centers.',
+        done: false
+      },
+      {
+        id: 'mags-paint',
+        num: 3,
+        name: 'Mags Paint (Stock Alloys Repaint)',
+        category: 'Exterior Style',
+        cost: '₱3,500 – ₱5,000',
+        priority: 'Medium',
+        notes: 'Gloss black or gunmetal finish on OEM 15" wheels for sporty RS stance. Saves ~₱45k over buying new wheels.',
+        done: false
+      },
+      {
+        id: 'auto-folding-mirror',
+        num: 4,
+        name: 'Auto-Folding Side Mirrors',
+        category: 'Convenience',
+        cost: '₱8,500 – ₱11,000',
+        priority: 'Optional / Low',
+        notes: 'Key-fob lock auto-retract module and motorized mirror mechanisms (retrofit).',
+        done: false
+      },
+      {
+        id: 'deep-dish',
+        num: 5,
+        name: 'Deep Dish Floor Matting & Trunk Tray',
+        category: 'Interior Protection',
+        cost: '₱2,500 – ₱3,500',
+        priority: 'Medium',
+        notes: 'TPE molded high-wall waterproof mats to prevent dirt, mud, and water spills from reaching OEM carpet.',
+        done: false
+      },
+      {
+        id: 'dash-cam',
+        num: 6,
+        name: 'Dash Cam (Front & Rear)',
+        category: 'Security & Evidence',
+        cost: '₱3,500 – ₱6,000',
+        priority: 'High Priority',
+        notes: 'Sony/Starlight sensor. Rear camera mounted flush against top rear glass for glare-free clear night video.',
+        done: false
+      },
+      {
+        id: 'door-dent',
+        num: 7,
+        name: 'Fix Door Dent (Paintless Dent Repair / PDR)',
+        category: 'Body Repair',
+        cost: '₱800 – ₱2,500',
+        priority: 'Medium',
+        notes: 'Opt for Paintless Dent Repair (PDR) if clear coat is intact to preserve original factory Honda paint without repainting the panel.',
+        done: false
+      },
+      {
+        id: 'fog-light',
+        num: 8,
+        name: 'Fix Cracked Fog Light Assembly',
+        category: 'Lighting / Exterior',
+        cost: '₱1,500 – ₱3,500',
+        priority: 'High Priority',
+        notes: 'Replace cracked fog lamp housing/lens to prevent water intrusion, electrical shorts, and internal condensation during heavy rain.',
+        done: false
+      }
+    ];
+
     const firebaseApp = initializeApp(firebaseConfig);
     const firestore = getFirestore(firebaseApp);
     const cloudDoc = doc(firestore, CLOUD_COLLECTION, CLOUD_DOC_ID);
@@ -1688,89 +1771,6 @@
     }
 
     
-    const defaultCarChecklist = [
-      {
-        id: 'insurance',
-        num: 1,
-        name: 'Comprehensive Car Insurance',
-        category: 'Asset Protection',
-        cost: '₱14,700 – ₱15,900',
-        priority: 'High (Nov/Dec)',
-        notes: 'Own Damage, Theft, and Acts of Nature (AON). Budget via 13th-month bonus (Cocogen / Stronghold).',
-        done: false
-      },
-      {
-        id: 'leather-seat-cover',
-        num: 2,
-        name: 'Leather Seat Covers',
-        category: 'Interior Luxury',
-        cost: '₱6,500',
-        priority: 'High Priority',
-        notes: 'Custom fit GN2 black leatherette. Must have certified side-airbag breakaway seam & perforated centers.',
-        done: false
-      },
-      {
-        id: 'mags-paint',
-        num: 3,
-        name: 'Mags Paint (Stock Alloys Repaint)',
-        category: 'Exterior Style',
-        cost: '₱3,500 – ₱5,000',
-        priority: 'Medium',
-        notes: 'Gloss black or gunmetal finish on OEM 15" wheels for sporty RS stance. Saves ~₱45k over buying new wheels.',
-        done: false
-      },
-      {
-        id: 'auto-folding-mirror',
-        num: 4,
-        name: 'Auto-Folding Side Mirrors',
-        category: 'Convenience',
-        cost: '₱8,500 – ₱11,000',
-        priority: 'Optional / Low',
-        notes: 'Key-fob lock auto-retract module and motorized mirror mechanisms (retrofit).',
-        done: false
-      },
-      {
-        id: 'deep-dish',
-        num: 5,
-        name: 'Deep Dish Floor Matting & Trunk Tray',
-        category: 'Interior Protection',
-        cost: '₱2,500 – ₱3,500',
-        priority: 'Medium',
-        notes: 'TPE molded high-wall waterproof mats to prevent dirt, mud, and water spills from reaching OEM carpet.',
-        done: false
-      },
-      {
-        id: 'dash-cam',
-        num: 6,
-        name: 'Dash Cam (Front & Rear)',
-        category: 'Security & Evidence',
-        cost: '₱3,500 – ₱6,000',
-        priority: 'High Priority',
-        notes: 'Sony/Starlight sensor. Rear camera mounted flush against top rear glass for glare-free clear night video.',
-        done: false
-      },
-      {
-        id: 'door-dent',
-        num: 7,
-        name: 'Fix Door Dent (Paintless Dent Repair / PDR)',
-        category: 'Body Repair',
-        cost: '₱800 – ₱2,500',
-        priority: 'Medium',
-        notes: 'Opt for Paintless Dent Repair (PDR) if clear coat is intact to preserve original factory Honda paint without repainting the panel.',
-        done: false
-      },
-      {
-        id: 'fog-light',
-        num: 8,
-        name: 'Fix Cracked Fog Light Assembly',
-        category: 'Lighting / Exterior',
-        cost: '₱1,500 – ₱3,500',
-        priority: 'High Priority',
-        notes: 'Replace cracked fog lamp housing/lens to prevent water intrusion, electrical shorts, and internal condensation during heavy rain.',
-        done: false
-      }
-    ];
-
     function openEditChecklistModal(item) {
       const modal = document.getElementById('checklistEditModal');
       if (!modal || !item) return;
