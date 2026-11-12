@@ -990,7 +990,7 @@
       <div>
         <p class="eyebrow" style="margin: 0 0 4px; color: var(--blue);">Upgrades & Accessories Tracker</p>
         <div style="font-size: 18px; font-weight: 700; color: var(--ink);">Car Upgrades & Wishlist</div>
-        <p style="margin: 4px 0 0; font-size: 13px; color: var(--muted);"><span id="checklistDashboardCount" style="color: var(--ok); font-weight: 700;">0 of 8 completed</span> • Insurance, Leather Seats, Mags Paint, Mirrors, Deep Dish, Dashcam, Door Dent, Fog Light</p>
+        <p style="margin: 4px 0 0; font-size: 13px; color: var(--muted);"><span id="checklistDashboardCount" style="color: var(--ok); font-weight: 700;">0 of 8 completed</span> • Insurance, Door Dent, Leather Seats, Fog Light, Mags Paint, Back Cam, Deep Dish, Mirrors</p>
       </div>
       <button class="secondary" id="goToChecklistBtn" type="button" style="padding: 10px 18px; font-size: 12px; font-weight: 600; cursor: pointer;">View Checklist →</button>
     </section>
@@ -1302,18 +1302,38 @@
         done: false
       },
       {
-        id: 'leather-seat-cover',
+        id: 'door-dent',
         num: 2,
+        name: 'Fix Door Dent (Paintless Dent Repair / PDR)',
+        category: 'Body Repair',
+        cost: '₱800 – ₱2,500',
+        priority: 'High Priority',
+        notes: 'Opt for Paintless Dent Repair (PDR) to massage the door dent out and preserve original factory Honda paint.',
+        done: false
+      },
+      {
+        id: 'leather-seat-cover',
+        num: 3,
         name: 'Leather Seat Covers',
         category: 'Interior Luxury',
         cost: '₱6,500',
-        priority: 'High Priority',
+        priority: 'Medium',
         notes: 'Custom fit GN2 black leatherette. Must have certified side-airbag breakaway seam & perforated centers.',
         done: false
       },
       {
+        id: 'fog-light',
+        num: 4,
+        name: 'Fix Cracked Fog Light Assembly',
+        category: 'Lighting / Exterior',
+        cost: '₱1,500 – ₱3,500',
+        priority: 'Medium',
+        notes: 'Replace cracked fog lamp housing/lens to prevent water intrusion, electrical shorts, and internal condensation during heavy rain.',
+        done: false
+      },
+      {
         id: 'mags-paint',
-        num: 3,
+        num: 5,
         name: 'Mags Paint (Stock Alloys Repaint)',
         category: 'Exterior Style',
         cost: '₱3,500 – ₱5,000',
@@ -1322,53 +1342,33 @@
         done: false
       },
       {
+        id: 'back-cam',
+        num: 6,
+        name: 'Replace Backup / Rear Camera',
+        category: 'Visibility & Safety',
+        cost: '₱1,200 – ₱2,500',
+        priority: 'Low / Optional',
+        notes: 'Replace degraded or blurry reverse camera with clear wide-angle night-vision camera. (Front dashcam already installed).',
+        done: false
+      },
+      {
+        id: 'deep-dish',
+        num: 7,
+        name: 'Deep Dish Floor Matting & Trunk Tray',
+        category: 'Interior Protection',
+        cost: '₱2,500 – ₱3,500',
+        priority: 'Low / Optional',
+        notes: 'TPE molded high-wall waterproof mats. Low priority since existing OEM mats can still be washed and cleaned.',
+        done: false
+      },
+      {
         id: 'auto-folding-mirror',
-        num: 4,
+        num: 8,
         name: 'Auto-Folding Side Mirrors',
         category: 'Convenience',
         cost: '₱8,500 – ₱11,000',
         priority: 'Optional / Low',
         notes: 'Key-fob lock auto-retract module and motorized mirror mechanisms (retrofit).',
-        done: false
-      },
-      {
-        id: 'deep-dish',
-        num: 5,
-        name: 'Deep Dish Floor Matting & Trunk Tray',
-        category: 'Interior Protection',
-        cost: '₱2,500 – ₱3,500',
-        priority: 'Medium',
-        notes: 'TPE molded high-wall waterproof mats to prevent dirt, mud, and water spills from reaching OEM carpet.',
-        done: false
-      },
-      {
-        id: 'dash-cam',
-        num: 6,
-        name: 'Dash Cam (Front & Rear)',
-        category: 'Security & Evidence',
-        cost: '₱3,500 – ₱6,000',
-        priority: 'High Priority',
-        notes: 'Sony/Starlight sensor. Rear camera mounted flush against top rear glass for glare-free clear night video.',
-        done: false
-      },
-      {
-        id: 'door-dent',
-        num: 7,
-        name: 'Fix Door Dent (Paintless Dent Repair / PDR)',
-        category: 'Body Repair',
-        cost: '₱800 – ₱2,500',
-        priority: 'Medium',
-        notes: 'Opt for Paintless Dent Repair (PDR) if clear coat is intact to preserve original factory Honda paint without repainting the panel.',
-        done: false
-      },
-      {
-        id: 'fog-light',
-        num: 8,
-        name: 'Fix Cracked Fog Light Assembly',
-        category: 'Lighting / Exterior',
-        cost: '₱1,500 – ₱3,500',
-        priority: 'High Priority',
-        notes: 'Replace cracked fog lamp housing/lens to prevent water intrusion, electrical shorts, and internal condensation during heavy rain.',
         done: false
       }
     ];
